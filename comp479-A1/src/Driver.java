@@ -3,12 +3,21 @@ import java.io.IOException;
 
 public class Driver {
 
-	public static void main(String[] args) throws FileNotFoundException, IOException {
+	public static void main(String[] args) throws FileNotFoundException, IOException, ClassNotFoundException {
 		
-		String path = "data/reut2-000.sgm";
-		DocumentProcessor dp = new DocumentProcessor();
-		dp.readDocument(path);
-
+		for(int i=0; i<=21; i++){
+			String path;
+			if(i < 10){
+				path = "data/reut2-00" + i + ".sgm";
+			}
+			else{
+				path = "data/reut2-0" + i + ".sgm";
+			}
+			DocumentProcessor dp = new DocumentProcessor();
+			dp.readDocument(path);
+		}
+		
+		//System.out.print(Runtime.getRuntime().freeMemory());
+		
 	}
-
 }
