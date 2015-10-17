@@ -9,6 +9,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Scanner;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
@@ -17,7 +18,11 @@ public class DocumentProcessor {
 
 	public final static String stopWords = "a about above after again against all am an and any are aren't as at be because been before being below between both but by can't cannot could couldn't did didn't do does doesn't doing don't down during each few for from further had hadn't has hasn't have haven't having he he'd he'll he's her here here's hers herself him himself his how how's i i'd i'll i'm i've if in into is isn't it it's its itself let's me more most mustn't my myself no nor not of off on once only or other ought our ours ourselves out over own same shan't she she'd she'll she's should shouldn't so some such than that that's the their theirs them themselves then there there's these they they'd they'll they're they've this those through to too under until up very was wasn't we we'd we'll we're we've were weren't what what's when when's where where's which while who who's whom why why's with won't would wouldn't you you'd you'll you're you've your yours yourself yourselves";
 
-	private TreeMap<String, ArrayList<Integer>> dic = new TreeMap<String, ArrayList<Integer>>();
+	private static TreeMap<String, ArrayList<Integer>> dic = new TreeMap<String, ArrayList<Integer>>();
+	private static TreeMap<String, ArrayList<Integer>> unfilteredDic = new TreeMap<String, ArrayList<Integer>>();
+	private static int unfilteredTokenCounter = 0, unfilteredPostingCounter = 0;
+	private static int tokenCounter = 0, postingCounter = 0;
+	
 	private int documentNumber;
 	private boolean inDcoument = false;
 	private Stemmer s = new Stemmer();
@@ -44,6 +49,7 @@ public class DocumentProcessor {
 	}
 
 	private void lineProcessor(String line){
+		
 		if(line.contains("NEWID=")){
 			int index = line.indexOf("NEWID=");
 			String title = line.substring(index + 7, line.length() - 2);
@@ -66,10 +72,29 @@ public class DocumentProcessor {
 		else{
 			if(inDcoument == true){
 				StringTokenizer st = new StringTokenizer(line);
-				while (st.hasMoreTokens()) {			    	
-					tokenProcess(st.nextToken());
+				while (st.hasMoreTokens()) {
+					String str = st.nextToken();
+					tokenProcess(str);
+					unfilteredTokenProcess(str);
 				}
 			}		
+		}
+	}
+	
+	private void unfilteredTokenProcess(String token){
+		unfilteredPostingCounter++;
+		if(!unfilteredDic.containsKey(token)){	
+			unfilteredTokenCounter++;
+			ArrayList<Integer> list = new ArrayList<Integer>();
+			list.add(documentNumber);
+			unfilteredDic.put(token, list);
+		}
+		else{
+			
+			ArrayList<Integer> list = unfilteredDic.get(token);
+			list.add(documentNumber);
+			unfilteredDic.put(token, list);
+			
 		}
 	}
 
@@ -87,14 +112,17 @@ public class DocumentProcessor {
 	}
 
 	private void tokenSPIMI(String token){
-		if(!(Runtime.getRuntime().freeMemory() < 1)){
-			if(!dic.containsKey(token)){				
+		if(!(Runtime.getRuntime().freeMemory() < 0)){
+			postingCounter++;
+			if(!dic.containsKey(token)){
+				tokenCounter++;
 				ArrayList<Integer> list = new ArrayList<Integer>();
 				list.add(documentNumber);
 				dic.put(token, list);
 				//System.out.println(token);
 			}
 			else{
+				
 				ArrayList<Integer> list = dic.get(token);
 				//no duplicate document number in the posting list
 				if(!list.contains(documentNumber)){
@@ -142,16 +170,16 @@ public class DocumentProcessor {
 				Set<String> s = tmp2.keySet();
 				for(String str : s){
 					if(tmp.containsKey(str)){
-						ArrayList list = tmp.get(str);
-						ArrayList list2 = tmp2.get(str);
+						ArrayList<Integer> list = tmp.get(str);
+						ArrayList<Integer> list2 = tmp2.get(str);
 						list.addAll(list2);
 						tmp.replace(str, list);
-						System.out.println(str);
+						//System.out.println(str);
 					}
 					else{
-						ArrayList list2 = tmp2.get(str);
+						ArrayList<Integer> list2 = tmp2.get(str);
 						tmp.put(str, list2);
-						System.out.println(str);
+						//System.out.println(str);
 					}
 				}
 				
@@ -163,5 +191,39 @@ public class DocumentProcessor {
 			}
 		}
 		return tmp;
+	}
+	
+	public static void runDic(){
+		//statistics display
+		System.out.println("Compressing Statistics");
+		System.out.println("Unfiltered Token:" + unfilteredTokenCounter);
+		System.out.println("Unfiltered Posting:" + unfilteredPostingCounter);
+		System.out.println("Token :" + tokenCounter);
+		System.out.println("Postings :" + postingCounter);
+		
+		
+		//ask for input and validate the input
+		String input;
+		do{
+			System.out.println("Which word would you like to search?");
+			Scanner in = new Scanner(System.in);
+			input = in.nextLine();
+		}while(input.contains("[^a-zA-Z ]") || input.length() == 0);
+
+		//result not found
+		if(!dic.containsKey(input)){
+			System.out.println("Sorry! No record matches your query! Please try again!");
+			runDic();
+		}
+		//result found
+		else{
+			ArrayList<Integer> result = dic.get(input);
+			System.out.println();
+			System.out.println("Here is the result for " + input + ":");
+			System.out.println();
+			for(Integer i : result){
+				System.out.print(i + " ");
+			}
+		}
 	}
 }

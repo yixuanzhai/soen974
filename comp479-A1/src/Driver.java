@@ -17,7 +17,7 @@ public class Driver {
 			dp.readDocument(path);
 		}
 		
-		//System.out.print(Runtime.getRuntime().freeMemory());
+		DocumentProcessor.runDic();
 		
 	}
 }
